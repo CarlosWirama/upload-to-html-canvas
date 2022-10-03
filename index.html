@@ -4,12 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="src/designSystem.css">
+    <link rel="stylesheet" href="src/style.css">
     <title>Carlos Wirama</title>
   </head>
   <body>
-    <label>Image File:</label><br/>
-    <input type="file" id="imageLoader" name="imageLoader"/>
-    <canvas id="imageCanvas"></canvas>
+    <div class="content">
+      <canvas id="imageCanvas"></canvas>
+      
+      <div class="row space-between align-center fullwidth">
+        <div><b>Image 1</b></div>
+        <div class="row flex-end">
+          <button class="blue-button">Back</button>
+          <span class="text-sm p2">1 of 12<span>
+          <button class="blue-button">Next</button>
+        </div>
+      </div>
+      
+      <div class="row flex-end fullwidth">
+        <button class="box-button">Delete</button>
+        <label for="imageLoader" class="box-button ml2">Upload New Image</label>
+        <input type="file" id="imageLoader" name="imageLoader" hidden/>
+      </div>
+      
+      <div id="image-list">
+        <div>
+          Secret <button class="blue-button">Delete</button>
+        </div>
+        <div>
+          Secret <button class="blue-button">Delete</button>
+        </div>
+        <button class="box-button mt3">Clear All Tags</button>
+      </div>
+    </div>
     
     <script src="src/index.js"></script>
   </body>
