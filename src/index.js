@@ -1,3 +1,12 @@
+// DOM getters
+const deleteShownBtn = document.getElementById("delete-shown-btn");
+const imagesList = document.getElementById("images-list");
+const detailRow = document.getElementById("detail-row");
+const canvas = document.getElementById("image-canvas");
+const backBtn = document.getElementById("back-btn");
+const nextBtn = document.getElementById("next-btn");
+const imageLoader = document.getElementById("image-loader");
+
 // initiate state
 let state = {
   images: [], // array of image object, containing name, data, and tags
@@ -15,13 +24,21 @@ function addImage(newImage) {
   });
 
   // show hidden elements
-  document.getElementById("detail-row").classList.remove("hide");
-  document.getElementById("delete-shown-btn").classList.remove("hide");
-  document.getElementById("images-list").classList.remove("hide");
+  detailRow.classList.remove("hide");
+  deleteShownBtn.classList.remove("hide");
+  imagesList.classList.remove("hide");
+
+  const liDeleteBtn = document.createElement("button");
+  liDeleteBtn.className = "li-delete-btn blue-button";
+  liDeleteBtn.innerHTML = "Delete";
+
+  // append image names to images-list
+  imagesList
+    .appendChild(document.createElement("li"))
+    .append(newImage.name, " ", liDeleteBtn);
 }
 
 // get canvas context
-const canvas = document.getElementById("image-canvas");
 const ctx = canvas.getContext("2d");
 
 function drawImage(image) {
@@ -45,12 +62,10 @@ function showImage(index) {
   document.getElementById("image-title").setHTML(images[index].name);
   document.getElementById("pagination").setHTML(paginationText);
 
-  const backBtn = document.getElementById("back-btn");
   index === 0
     ? backBtn.classList.add("disabled")
     : backBtn.classList.remove("disabled");
 
-  const nextBtn = document.getElementById("next-btn");
   index === images.length - 1
     ? nextBtn.classList.add("disabled")
     : nextBtn.classList.remove("disabled");
@@ -85,5 +100,17 @@ async function handleImage(e) {
 }
 
 // register handleImage listener
-const imageLoader = document.getElementById("image-loader");
 imageLoader.addEventListener("change", handleImage, false);
+
+// button listeners
+backBtn.addEventListener("click", () => {
+  if (state.shownIndex > 0) {
+    showImage(state.shownIndex - 1);
+  }
+});
+
+nextBtn.addEventListener("click", () => {
+  if (state.shownIndex < state.images.length - 1) {
+    showImage(state.shownIndex + 1);
+  }
+});
