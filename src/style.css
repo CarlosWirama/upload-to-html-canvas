@@ -2,14 +2,24 @@
   padding: 24px 32px;
 }
 
-#imageCanvas {
+#image-canvas {
   border: 1px solid #aaa;
   width: 100%;
 }
 
-#image-list {
+#images-list {
   margin-top: 16px;
   padding: 16px 0;
   border-top: 1px solid #aaa;
   font-size: 14px;
+}
+
+#image-loader {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+#image-title {
+  font-weight: bold;
 }

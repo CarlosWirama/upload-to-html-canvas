@@ -10,32 +10,36 @@
   </head>
   <body>
     <div class="content">
-      <canvas id="imageCanvas"></canvas>
+      <canvas id="image-canvas"></canvas>
       
-      <div class="row space-between align-center fullwidth">
-        <div><b>Image 1</b></div>
+      <div id="detail-row" class="row space-between align-center fullwidth hide">
+        <div id="image-title">Image 1</div>
         <div class="row flex-end">
-          <button class="blue-button">Back</button>
-          <span class="text-sm p2">1 of 12<span>
-          <button class="blue-button">Next</button>
+          <button id="back-btn" class="blue-button">Back</button>
+          <span id="pagination" class="text-sm p2">1 of 12</span>
+          <button id="next-btn" class="blue-button">Next</button>
         </div>
       </div>
       
       <div class="row flex-end fullwidth">
-        <button class="box-button">Delete</button>
-        <label for="imageLoader" class="box-button ml2">Upload New Image</label>
-        <input type="file" id="imageLoader" name="imageLoader" hidden/>
+        <button id="delete-shown-btn" class="box-button hide">Delete</button>
+        <label for="image-loader" class="box-button ml2">Upload New Image(s)</label>
+        <input
+          type="file"
+          id="image-loader"
+          name="image-loader"
+          accept=".jpg, .jpeg, .png"
+          multiple
+        />
       </div>
       
-      <div id="image-list">
-        <div>
-          Secret <button class="blue-button">Delete</button>
-        </div>
-        <div>
-          Secret <button class="blue-button">Delete</button>
-        </div>
-        <button class="box-button mt3">Clear All Tags</button>
-      </div>
+      <ul id="images-list" class="hide">
+
+          <li>
+            Secret <button class="li-delete-btn blue-button">Delete</button>
+          </li>
+            
+      </ul>
     </div>
     
     <script src="src/index.js"></script>

@@ -69,3 +69,12 @@ body {
 .blue-button:hover {
   color: cornflowerblue;
 }
+
+.blue-button.disabled {
+  color: gray;
+  cursor: not-allowed;
+}
+
+.hide {
+  display: none;
+}
