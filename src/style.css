@@ -1,0 +1,41 @@
+.content {
+  padding: 24px 32px;
+}
+
+#image-canvas {
+  border: 1px solid #aaa;
+  width: 100%;
+}
+
+#images-list {
+  margin-top: 16px;
+  padding: 16px 0;
+  border-top: 1px solid #aaa;
+  font-size: 14px;
+}
+
+#image-loader {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+#image-title {
+  font-weight: bold;
+}
+
+.canvas-container {
+  position: relative;
+}
+
+#tags-canvas,
+#selection-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+#selection-canvas {
+  z-index: 1;
+}

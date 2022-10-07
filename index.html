@@ -4,11 +4,44 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Static Template</title>
+    <link rel="stylesheet" href="src/designSystem.css">
+    <link rel="stylesheet" href="src/style.css">
+    <title>Carlos Wirama</title>
   </head>
   <body>
-    <h1>
-      This is a static template, there is no bundler or bundling involved!
-    </h1>
+    <div class="content">
+      <div class="canvas-container">
+      <canvas id="image-canvas"></canvas>
+      <canvas id="tags-canvas" width="0"></canvas>
+      <canvas id="selection-canvas" width="0"></canvas>
+      </div>
+      <div id="detail-row" class="row space-between align-center fullwidth hide">
+        <div id="image-title">Image 1</div>
+        <div class="row flex-end">
+          <button id="back-btn" class="blue-button">Back</button>
+          <span id="pagination" class="text-sm p2">1 of 12</span>
+          <button id="next-btn" class="blue-button">Next</button>
+        </div>
+      </div>
+      
+      <div class="row flex-end fullwidth">
+        <button id="delete-shown-btn" class="box-button hide">Delete</button>
+        <label for="image-loader" class="box-button ml2">Upload New Image(s)</label>
+        <input
+          type="file"
+          id="image-loader"
+          name="image-loader"
+          accept=".jpg, .jpeg, .png"
+          multiple
+        />
+      </div>
+      
+      <ul id="tags-list"></ul>
+      <button id="clear-tags-btn" class="box-button hide">Clear All Tags</button>
+
+      <ul id="images-list" class="hide"></ul>
+    </div>
+    
+    <script src="src/index.js"></script>
   </body>
 </html>
