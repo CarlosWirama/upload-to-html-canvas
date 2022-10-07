@@ -46,11 +46,31 @@ function modifyCurrentImage(newImage) {
   });
 }
 
-function addImage(newImage) {
+function deleteImage(index) {
+  const { images: prevImages } = state;
   setState({
-    images: [...state.images, newImage],
+    images: [...prevImages.slice(0, index), ...prevImages.slice(index + 1)],
   });
+  const { images: newImages } = state;
+  console.log({ index, prevImages, newImages });
+  document.querySelector(`#images-list :nth-child(${index + 1})`).remove();
 
+  if (newImages.length === 0) {
+    clearTags();
+    clearRectangle(imageContext);
+
+    detailRow.classList.add("hide");
+    deleteShownBtn.classList.add("hide");
+    imagesList.classList.add("hide");
+  } else {
+    // show the next image in the list.
+    // if the deleted image was the latest, show the new latest image
+    showImage(index === newImages.length ? index - 1 : index);
+  }
+  console.log(newImages, index);
+}
+
+function addImage(newImage) {
   // show hidden elements
   detailRow.classList.remove("hide");
   deleteShownBtn.classList.remove("hide");
@@ -60,10 +80,20 @@ function addImage(newImage) {
   liDeleteBtn.className = "li-delete-btn blue-button";
   liDeleteBtn.innerHTML = "Delete";
 
+  const li = document.createElement("li");
+  li.append(newImage.name, " ", liDeleteBtn);
+
+  const newIndex = state.images.length;
+  liDeleteBtn.onclick = () => {
+    deleteImage(newIndex);
+  };
+
   // append image names to images-list
-  imagesList
-    .appendChild(document.createElement("li"))
-    .append(newImage.name, " ", liDeleteBtn);
+  imagesList.appendChild(li);
+
+  setState({
+    images: [...state.images, newImage],
+  });
 }
 
 function drawRectangle(canvasContext, strokeStyle, rect) {
@@ -222,6 +252,10 @@ nextBtn.onclick = () => {
   if (state.shownIndex < state.images.length - 1) {
     showImage(state.shownIndex + 1);
   }
+};
+
+deleteShownBtn.onclick = () => {
+  deleteImage(state.shownIndex);
 };
 
 // Selection
