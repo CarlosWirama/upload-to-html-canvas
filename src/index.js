@@ -52,12 +52,12 @@ function deleteImage(index) {
     images: [...prevImages.slice(0, index), ...prevImages.slice(index + 1)],
   });
   const { images: newImages } = state;
-  console.log({ index, prevImages, newImages });
-  document.querySelector(`#images-list :nth-child(${index + 1})`).remove();
+  renderImagesList();
 
   if (newImages.length === 0) {
     clearTags();
-    clearRectangle(imageContext);
+    clearTagsBtn.classList.add("hide");
+    clearRectangle(imageCanvas);
 
     detailRow.classList.add("hide");
     deleteShownBtn.classList.add("hide");
@@ -67,33 +67,17 @@ function deleteImage(index) {
     // if the deleted image was the latest, show the new latest image
     showImage(index === newImages.length ? index - 1 : index);
   }
-  console.log(newImages, index);
 }
 
 function addImage(newImage) {
+  setState({
+    images: [...state.images, newImage],
+  });
+
   // show hidden elements
   detailRow.classList.remove("hide");
   deleteShownBtn.classList.remove("hide");
   imagesList.classList.remove("hide");
-
-  const liDeleteBtn = document.createElement("button");
-  liDeleteBtn.className = "li-delete-btn blue-button";
-  liDeleteBtn.innerHTML = "Delete";
-
-  const li = document.createElement("li");
-  li.append(newImage.name, " ", liDeleteBtn);
-
-  const newIndex = state.images.length;
-  liDeleteBtn.onclick = () => {
-    deleteImage(newIndex);
-  };
-
-  // append image names to images-list
-  imagesList.appendChild(li);
-
-  setState({
-    images: [...state.images, newImage],
-  });
 }
 
 function drawRectangle(canvasContext, strokeStyle, rect) {
@@ -103,9 +87,9 @@ function drawRectangle(canvasContext, strokeStyle, rect) {
   canvasContext.stroke();
 }
 
-function clearRectangle(canvasContext) {
-  const { width, height } = selectionCanvas;
-  canvasContext.clearRect(0, 0, width, height);
+function clearRectangle(canvas) {
+  const { width, height } = canvas;
+  canvas.getContext("2d").clearRect(0, 0, width, height);
 }
 
 function drawTag(name, index, rect) {
@@ -152,7 +136,7 @@ function addTag(name, rect) {
 }
 
 function clearTags() {
-  clearRectangle(tagsContext);
+  clearRectangle(tagsCanvas);
   while (tagsList.firstChild) {
     tagsList.removeChild(tagsList.firstChild);
   }
@@ -177,17 +161,39 @@ function drawImage(image) {
     imageCanvas.height = img.height;
     imageContext.drawImage(img, 0, 0);
 
-    const boundingClientRect = imageCanvas.getBoundingClientRect();
-    selectionCanvas.width = boundingClientRect.width;
-    selectionCanvas.height = boundingClientRect.height;
-    tagsCanvas.width = boundingClientRect.width;
-    tagsCanvas.height = boundingClientRect.height;
+    const { width, height } = imageCanvas.getBoundingClientRect();
+    selectionCanvas.width = width;
+    selectionCanvas.height = height;
+    tagsCanvas.width = width;
+    tagsCanvas.height = height;
 
     showTags();
 
     selectionContext.setLineDash([5, 5]);
   };
   img.src = image;
+}
+
+function renderImagesList() {
+  // clear list
+  while (imagesList.firstChild) {
+    imagesList.removeChild(imagesList.firstChild);
+  }
+
+  // render each list item
+  state.images.forEach((image, index) => {
+    const liDeleteBtn = document.createElement("button");
+    liDeleteBtn.className = "blue-button";
+    liDeleteBtn.innerHTML = "Delete";
+
+    const li = document.createElement("li");
+    li.append(image.name, " ", liDeleteBtn);
+
+    liDeleteBtn.onclick = () => deleteImage(index);
+
+    // append image names to images-list
+    imagesList.appendChild(li);
+  });
 }
 
 function showImage(index) {
@@ -237,6 +243,7 @@ async function handleImage(e) {
 
   // show the last uploaded image
   showImage(state.images.length - 1);
+  renderImagesList();
 }
 
 // register handleImage listener
@@ -270,7 +277,7 @@ function handleResizeSelection(e) {
     e.offsetY - startPoint.y,
   ];
 
-  clearRectangle(selectionContext);
+  clearRectangle(selectionCanvas);
   drawRectangle(selectionContext, strokeStyle, rect);
 }
 
@@ -305,7 +312,7 @@ function handleFinishSelecting(e) {
       addTag(tagName, rect);
     }
   }
-  clearRectangle(selectionContext);
+  clearRectangle(selectionCanvas);
   setState({ selectionStartPoint: null });
 }
 
