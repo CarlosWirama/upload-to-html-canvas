@@ -1,5 +1,11 @@
+// Constants
+const MINIMUM_SELECTION_WIDTH = 25;
+const MINIMUM_SELECTION_HEIGHT = 25;
+
 // DOM getters
+const clearTagsBtn = document.getElementById("clear-tags-btn");
 const deleteShownBtn = document.getElementById("delete-shown-btn");
+const tagsList = document.getElementById("tags-list");
 const imagesList = document.getElementById("images-list");
 const detailRow = document.getElementById("detail-row");
 const imageCanvas = document.getElementById("image-canvas");
@@ -24,6 +30,20 @@ let state = {
 // don't mutate state anywhere else. use below function instead
 function setState(newState) {
   state = { ...state, ...newState };
+}
+
+function modifyCurrentImage(newImage) {
+  const { images, shownIndex: index } = state;
+  setState({
+    images: [
+      ...images.slice(0, index),
+      {
+        ...images[index],
+        ...newImage,
+      },
+      ...images.slice(index + 1),
+    ],
+  });
 }
 
 function addImage(newImage) {
@@ -58,34 +78,66 @@ function clearRectangle(canvasContext) {
   canvasContext.clearRect(0, 0, width, height);
 }
 
-function drawTag(name, rect) {
+function drawTag(name, index, rect) {
   const strokeStyle = "#888";
+  tagsContext.fillStyle = "#888";
+  const [x, y, width] = rect;
+  tagsContext.fillText(name, x + 2, y + 10, width);
   drawRectangle(tagsContext, strokeStyle, rect);
-}
 
-function addTag(name, e) {
-  const { images, selectionStartPoint: startPoint, shownIndex: index } = state;
-  const prevImage = images[index];
-  const rect = [
-    startPoint.x,
-    startPoint.y,
-    e.offsetX - startPoint.x,
-    e.offsetY - startPoint.y,
-  ];
+  // put on tags-list
+  // NOTE: this is not ideal, as we're adding a side effect to "drawTag"
+  // but since we're always do the code below everytime we call drawTag
+  // and I don't want this to be skipped, I'm putting here for now.
+  // In the future, we can wrap drawTag and below function to a separate function
+  // and call that new function instead
+  const deleteTagBtn = document.createElement("button");
+  deleteTagBtn.className = "blue-button";
+  deleteTagBtn.innerHTML = "Delete";
 
-  const updatedImage = {
-    ...prevImage,
-    tags: [...prevImage.tags, { name, rect }],
+  const li = document.createElement("li");
+  li.append(name, " ", deleteTagBtn);
+
+  deleteTagBtn.onclick = () => {
+    tagsList.removeChild(li);
+
+    const prevTags = state.images[state.shownIndex].tags;
+    const tags = [...prevTags.slice(0, index), ...prevTags.slice(index + 1)];
+    modifyCurrentImage({ tags });
+    showTags();
   };
 
-  setState({
-    images: [
-      ...images.slice(0, index),
-      updatedImage,
-      ...images.slice(index + 1),
-    ],
-  });
-  drawTag(name, rect);
+  tagsList.appendChild(li);
+}
+
+function addTag(name, rect) {
+  const { images, shownIndex } = state;
+  const currTags = images[shownIndex].tags;
+
+  const tags = [...currTags, { name, rect }];
+  modifyCurrentImage({ tags });
+
+  drawTag(name, currTags.length, rect);
+  clearTagsBtn.classList.remove("hide");
+}
+
+function clearTags() {
+  clearRectangle(tagsContext);
+  while (tagsList.firstChild) {
+    tagsList.removeChild(tagsList.firstChild);
+  }
+}
+
+clearTagsBtn.onclick = () => {
+  clearTags();
+  clearTagsBtn.classList.add("hide");
+  modifyCurrentImage({ tags: [] });
+};
+
+function showTags() {
+  clearTags();
+  const tags = state.images[state.shownIndex]?.tags || [];
+  tags.forEach((tag, index) => drawTag(tag.name, index, tag.rect));
 }
 
 function drawImage(image) {
@@ -101,6 +153,8 @@ function drawImage(image) {
     tagsCanvas.width = boundingClientRect.width;
     tagsCanvas.height = boundingClientRect.height;
 
+    showTags();
+
     selectionContext.setLineDash([5, 5]);
   };
   img.src = image;
@@ -108,13 +162,14 @@ function drawImage(image) {
 
 function showImage(index) {
   const { images } = state;
+  const { name, data } = images[index];
 
   setState({ shownIndex: index });
 
-  drawImage(images[index].data);
+  drawImage(data);
 
   const paginationText = `${index + 1} of ${images.length}`;
-  document.getElementById("image-title").setHTML(images[index].name);
+  document.getElementById("image-title").setHTML(name);
   document.getElementById("pagination").setHTML(paginationText);
 
   index === 0
@@ -201,10 +256,20 @@ selectionCanvas.onmousemove = (e) => {
 selectionCanvas.onmousedown = handleStartSelecting;
 
 function handleFinishSelecting(e) {
-  const newTagIndex = 0;
-  const tagName = prompt("Give your new tag a name", `Tag ${newTagIndex + 1}`);
-  if (tagName !== null) {
-    addTag(tagName, e);
+  const { x, y } = state.selectionStartPoint;
+  const width = e.offsetX - x;
+  const height = e.offsetY - y;
+
+  if (width >= MINIMUM_SELECTION_WIDTH && height >= MINIMUM_SELECTION_HEIGHT) {
+    const newTagIndex = state.images[state.shownIndex].tags.length;
+    const rect = [x, y, width, height];
+    const tagName = prompt(
+      "Give your new tag a name",
+      `Tag ${newTagIndex + 1}`
+    );
+    if (tagName !== null) {
+      addTag(tagName, rect);
+    }
   }
   clearRectangle(selectionContext);
   setState({ selectionStartPoint: null });
