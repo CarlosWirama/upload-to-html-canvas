@@ -2,15 +2,23 @@
 const deleteShownBtn = document.getElementById("delete-shown-btn");
 const imagesList = document.getElementById("images-list");
 const detailRow = document.getElementById("detail-row");
-const canvas = document.getElementById("image-canvas");
+const imageCanvas = document.getElementById("image-canvas");
+const tagsCanvas = document.getElementById("tags-canvas");
+const selectionCanvas = document.getElementById("selection-canvas");
 const backBtn = document.getElementById("back-btn");
 const nextBtn = document.getElementById("next-btn");
 const imageLoader = document.getElementById("image-loader");
+
+// get canvas context
+const imageContext = imageCanvas.getContext("2d");
+const tagsContext = tagsCanvas.getContext("2d");
+const selectionContext = selectionCanvas.getContext("2d");
 
 // initiate state
 let state = {
   images: [], // array of image object, containing name, data, and tags
   shownIndex: 0,
+  selectionStartPoint: null,
 };
 
 // don't mutate state anywhere else. use below function instead
@@ -38,15 +46,62 @@ function addImage(newImage) {
     .append(newImage.name, " ", liDeleteBtn);
 }
 
-// get canvas context
-const ctx = canvas.getContext("2d");
+function drawRectangle(canvasContext, strokeStyle, rect) {
+  canvasContext.strokeStyle = strokeStyle;
+  canvasContext.beginPath();
+  canvasContext.rect(...rect);
+  canvasContext.stroke();
+}
+
+function clearRectangle(canvasContext) {
+  const { width, height } = selectionCanvas;
+  canvasContext.clearRect(0, 0, width, height);
+}
+
+function drawTag(name, rect) {
+  const strokeStyle = "#888";
+  drawRectangle(tagsContext, strokeStyle, rect);
+}
+
+function addTag(name, e) {
+  const { images, selectionStartPoint: startPoint, shownIndex: index } = state;
+  const prevImage = images[index];
+  const rect = [
+    startPoint.x,
+    startPoint.y,
+    e.offsetX - startPoint.x,
+    e.offsetY - startPoint.y,
+  ];
+
+  const updatedImage = {
+    ...prevImage,
+    tags: [...prevImage.tags, { name, rect }],
+  };
+
+  setState({
+    images: [
+      ...images.slice(0, index),
+      updatedImage,
+      ...images.slice(index + 1),
+    ],
+  });
+  drawTag(name, rect);
+}
 
 function drawImage(image) {
   const img = new Image();
   img.onload = function () {
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
+    imageCanvas.width = img.width;
+    imageCanvas.height = img.height;
+    imageContext.drawImage(img, 0, 0);
+
+    const boundingClientRect = imageCanvas.getBoundingClientRect();
+    selectionCanvas.width = boundingClientRect.width;
+    selectionCanvas.height = boundingClientRect.height;
+    tagsCanvas.width = boundingClientRect.width;
+    tagsCanvas.height = boundingClientRect.height;
+
+    selectionContext.setLineDash([5, 5]);
   };
   img.src = image;
 }
@@ -100,17 +155,63 @@ async function handleImage(e) {
 }
 
 // register handleImage listener
-imageLoader.addEventListener("change", handleImage, false);
+imageLoader.onchange = handleImage;
 
-// button listeners
-backBtn.addEventListener("click", () => {
+backBtn.onclick = () => {
   if (state.shownIndex > 0) {
     showImage(state.shownIndex - 1);
   }
-});
+};
 
-nextBtn.addEventListener("click", () => {
+nextBtn.onclick = () => {
   if (state.shownIndex < state.images.length - 1) {
     showImage(state.shownIndex + 1);
   }
-});
+};
+
+// Selection
+
+function handleResizeSelection(e) {
+  const { selectionStartPoint: startPoint } = state;
+  const strokeStyle = "#ff0000";
+  const rect = [
+    startPoint.x,
+    startPoint.y,
+    e.offsetX - startPoint.x,
+    e.offsetY - startPoint.y,
+  ];
+
+  clearRectangle(selectionContext);
+  drawRectangle(selectionContext, strokeStyle, rect);
+}
+
+function handleStartSelecting(e) {
+  if (state.images.length) {
+    const origin = { x: e.offsetX, y: e.offsetY };
+    setState({ selectionStartPoint: origin });
+  }
+}
+
+selectionCanvas.onmousemove = (e) => {
+  if (state.selectionStartPoint) {
+    handleResizeSelection(e);
+  }
+};
+
+selectionCanvas.onmousedown = handleStartSelecting;
+
+function handleFinishSelecting(e) {
+  const newTagIndex = 0;
+  const tagName = prompt("Give your new tag a name", `Tag ${newTagIndex + 1}`);
+  if (tagName !== null) {
+    addTag(tagName, e);
+  }
+  clearRectangle(selectionContext);
+  setState({ selectionStartPoint: null });
+}
+
+window.onmouseup = (e) => {
+  if (state.selectionStartPoint) {
+    handleFinishSelecting(e);
+  }
+};

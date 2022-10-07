@@ -23,3 +23,19 @@
 #image-title {
   font-weight: bold;
 }
+
+.canvas-container {
+  position: relative;
+}
+
+#tags-canvas,
+#selection-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+#selection-canvas {
+  z-index: 1;
+}
