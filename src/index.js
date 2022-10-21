@@ -20,6 +20,7 @@ const imageContext = imageCanvas.getContext("2d");
 const tagsContext = tagsCanvas.getContext("2d");
 const selectionContext = selectionCanvas.getContext("2d");
 
+const storedImages = localStorage.getItem("images");
 // initiate state
 let state = {
   images: [], // array of image object, containing name, data, and tags
@@ -32,25 +33,38 @@ function setState(newState) {
   state = { ...state, ...newState };
 }
 
+if (storedImages) {
+  setState({ images: JSON.parse(storedImages) });
+  showImage(state.images.length - 1);
+  renderImagesList();
+
+  // show hidden elements
+  detailRow.classList.remove("hide");
+  deleteShownBtn.classList.remove("hide");
+  imagesList.classList.remove("hide");
+}
+
+function setImages(images) {
+  setState({ images });
+  localStorage.setItem("images", JSON.stringify(state.images));
+}
+
 function modifyCurrentImage(newImage) {
   const { images, shownIndex: index } = state;
-  setState({
-    images: [
-      ...images.slice(0, index),
-      {
-        ...images[index],
-        ...newImage,
-      },
-      ...images.slice(index + 1),
-    ],
-  });
+
+  setImages([
+    ...images.slice(0, index),
+    {
+      ...images[index],
+      ...newImage,
+    },
+    ...images.slice(index + 1),
+  ]);
 }
 
 function deleteImage(index) {
   const { images: prevImages } = state;
-  setState({
-    images: [...prevImages.slice(0, index), ...prevImages.slice(index + 1)],
-  });
+  setImages([...prevImages.slice(0, index), ...prevImages.slice(index + 1)]);
   const { images: newImages } = state;
   renderImagesList();
 
@@ -70,9 +84,7 @@ function deleteImage(index) {
 }
 
 function addImage(newImage) {
-  setState({
-    images: [...state.images, newImage],
-  });
+  setImages([...state.images, newImage]);
 
   // show hidden elements
   detailRow.classList.remove("hide");
