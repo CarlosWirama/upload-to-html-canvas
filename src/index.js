@@ -25,7 +25,8 @@ const storedImages = localStorage.getItem("images");
 let state = {
   images: [], // array of image object, containing name, data, and tags
   shownIndex: 0,
-  selectionStartPoint: null,
+  dragStartPoint: null,
+  selectedTagIndex: null,
 };
 
 // don't mutate state anywhere else. use below function instead
@@ -60,6 +61,21 @@ function modifyCurrentImage(newImage) {
     },
     ...images.slice(index + 1),
   ]);
+}
+
+function modifyCurrentTag(newTag) {
+  const { images, shownIndex, selectedTagIndex } = state;
+  const currTags = images[shownIndex].tags;
+
+  const tags = [
+    ...currTags.slice(0, selectedTagIndex),
+    {
+      ...currTags[selectedTagIndex],
+      ...newTag,
+    },
+    ...currTags.slice(selectedTagIndex + 1),
+  ];
+  modifyCurrentImage({ tags });
 }
 
 function deleteImage(index) {
@@ -105,18 +121,15 @@ function clearRectangle(canvas) {
 }
 
 function drawTag(name, index, rect) {
-  const strokeStyle = "#888";
-  tagsContext.fillStyle = "#888";
+  const strokeStyle = state.selectedTagIndex === index ? "#ff0" : "#888";
   const [x, y, width] = rect;
+  tagsContext.fillStyle = strokeStyle;
   tagsContext.fillText(name, x + 2, y + 10, width);
   drawRectangle(tagsContext, strokeStyle, rect);
+}
 
+function createTagElement(name, index) {
   // put on tags-list
-  // NOTE: this is not ideal, as we're adding a side effect to "drawTag"
-  // but since we're always do the code below everytime we call drawTag
-  // and I don't want this to be skipped, I'm putting here for now.
-  // In the future, we can wrap drawTag and below function to a separate function
-  // and call that new function instead
   const deleteTagBtn = document.createElement("button");
   deleteTagBtn.className = "blue-button";
   deleteTagBtn.innerHTML = "Delete";
@@ -143,7 +156,10 @@ function addTag(name, rect) {
   const tags = [...currTags, { name, rect }];
   modifyCurrentImage({ tags });
 
-  drawTag(name, currTags.length, rect);
+  const tagIndex = currTags.length;
+  setState({ selectedTagIndex: tagIndex });
+  drawTag(name, tagIndex, rect);
+  createTagElement(name, tagIndex);
   clearTagsBtn.classList.remove("hide");
 }
 
@@ -163,7 +179,10 @@ clearTagsBtn.onclick = () => {
 function showTags() {
   clearTags();
   const tags = state.images[state.shownIndex]?.tags || [];
-  tags.forEach((tag, index) => drawTag(tag.name, index, tag.rect));
+  tags.forEach((tag, index) => {
+    drawTag(tag.name, index, tag.rect);
+    createTagElement(tag.name, index);
+  });
 }
 
 function drawImage(image) {
@@ -280,36 +299,78 @@ deleteShownBtn.onclick = () => {
 // Selection
 
 function handleResizeSelection(e) {
-  const { selectionStartPoint: startPoint } = state;
+  const { dragStartPoint } = state;
   const strokeStyle = "#ff0000";
   const rect = [
-    startPoint.x,
-    startPoint.y,
-    e.offsetX - startPoint.x,
-    e.offsetY - startPoint.y,
+    dragStartPoint.x,
+    dragStartPoint.y,
+    e.offsetX - dragStartPoint.x,
+    e.offsetY - dragStartPoint.y,
   ];
 
   clearRectangle(selectionCanvas);
   drawRectangle(selectionContext, strokeStyle, rect);
 }
 
-function handleStartSelecting(e) {
-  if (state.images.length) {
-    const origin = { x: e.offsetX, y: e.offsetY };
-    setState({ selectionStartPoint: origin });
-  }
+function handleMoveTag(e) {
+  const { images, shownIndex, selectedTagIndex, dragStartPoint } = state;
+  const tag = images[shownIndex].tags[selectedTagIndex];
+  const [x, y, w, h] = tag.rect;
+
+  // move tag x and y
+  const rect = [
+    x + e.offsetX - dragStartPoint.x,
+    y + e.offsetY - dragStartPoint.y,
+    w,
+    h,
+  ];
+
+  // technically I can modify the tag object directly, so I don't have to set the state again
+  // but to make this consistent, assume I can only modify the state by firing setState
+  modifyCurrentTag({ ...tag, rect });
+
+  // update the dragStartPoint to the current mouse position
+  handleStartDragging(e);
+
+  showTags();
+}
+
+function handleHoverTag(e) {
+  const { tags } = state.images[state.shownIndex];
+
+  // check if the pointer is inside a tag, checking from the last tag created
+  const foundIndex = tags.findLastIndex((tag, index) => {
+    drawTag(tag.name, index, tag.rect);
+    return tagsContext.isPointInPath(e.offsetX, e.offsetY);
+  });
+
+  // highlight tag
+  setState({ selectedTagIndex: foundIndex === -1 ? null : foundIndex });
+
+  showTags();
 }
 
 selectionCanvas.onmousemove = (e) => {
-  if (state.selectionStartPoint) {
+  if (state.dragStartPoint === null) {
+    handleHoverTag(e);
+  } else if (state.selectedTagIndex === null) {
     handleResizeSelection(e);
+  } else {
+    handleMoveTag(e);
   }
 };
 
-selectionCanvas.onmousedown = handleStartSelecting;
+function handleStartDragging(e) {
+  if (state.images.length) {
+    const dragStartPoint = { x: e.offsetX, y: e.offsetY };
+    setState({ dragStartPoint });
+  }
+}
+
+selectionCanvas.onmousedown = handleStartDragging;
 
 function handleFinishSelecting(e) {
-  const { x, y } = state.selectionStartPoint;
+  const { x, y } = state.dragStartPoint;
   const width = e.offsetX - x;
   const height = e.offsetY - y;
 
@@ -325,11 +386,13 @@ function handleFinishSelecting(e) {
     }
   }
   clearRectangle(selectionCanvas);
-  setState({ selectionStartPoint: null });
 }
 
 window.onmouseup = (e) => {
-  if (state.selectionStartPoint) {
-    handleFinishSelecting(e);
+  if (state.dragStartPoint) {
+    if (state.selectedTagIndex === null) {
+      handleFinishSelecting(e);
+    }
+    setState({ dragStartPoint: null });
   }
 };
