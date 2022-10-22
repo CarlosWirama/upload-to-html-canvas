@@ -373,8 +373,10 @@ function handleFinishSelecting(e) {
   const { x, y } = state.dragStartPoint;
   const width = e.offsetX - x;
   const height = e.offsetY - y;
-
-  if (width >= MINIMUM_SELECTION_WIDTH && height >= MINIMUM_SELECTION_HEIGHT) {
+  if (
+    Math.abs(width) >= MINIMUM_SELECTION_WIDTH &&
+    Math.abs(height) >= MINIMUM_SELECTION_HEIGHT
+  ) {
     const newTagIndex = state.images[state.shownIndex].tags.length;
     const rect = [x, y, width, height];
     const tagName = prompt(
